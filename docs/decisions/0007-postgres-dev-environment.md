@@ -1,8 +1,7 @@
 # ADR-0007 — Environnement PostgreSQL de développement
 
 ## Statut
-**En attente de validation utilisateur** — voir question posée en fin de
-réponse d'architecture initiale.
+Accepté (validé par l'utilisateur le 2026-08-19).
 
 ## Contexte
 L'environnement de développement inspecté (`node -v`, `psql --version`,
@@ -30,4 +29,14 @@ quiconque préfère un environnement 100 % local/offline par la suite — les de
 ne s'excluent pas, seul `DATABASE_URL` change.
 
 ## Décision
-À confirmer par l'utilisateur.
+Option 1 : **Neon** (Postgres hébergé, tier gratuit).
+
+## Prochaine étape (Phase 1)
+1. Créer un projet Neon (console.neon.tech), récupérer la connection string.
+2. La coller dans `.env` (`DATABASE_URL`) — jamais commitée.
+3. `npm run db:generate` puis `npm run db:migrate` (packages/db) pour créer le
+   schéma initial à partir de `packages/db/src/schema.ts`.
+
+`docker-compose.yml` pourra être ajouté ultérieurement pour un environnement
+local/offline si besoin, sans remettre en cause cette décision — seule
+`DATABASE_URL` change.

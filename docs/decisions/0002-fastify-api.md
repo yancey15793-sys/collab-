@@ -1,7 +1,7 @@
 # ADR-0002 — Fastify pour l'API
 
 ## Statut
-Proposé.
+Accepté (validé par l'utilisateur le 2026-08-19).
 
 ## Contexte
 Le brief demande "une API REST proprement typée" en Node.js/TypeScript, sans

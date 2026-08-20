@@ -1,7 +1,7 @@
 # ADR-0008 — TREND global vs. personnalisation par utilisateur
 
 ## Statut
-Proposé — signalé comme point à challenger dans `docs/domain-model.md`.
+Accepté (validé par l'utilisateur le 2026-08-19).
 
 ## Contexte
 Le brief liste `userAffinity` comme colonne de l'entité `TREND` (§7, une table
@@ -31,5 +31,5 @@ bénéfice non démontré au stade MVP. Réévaluer si la personnalisation devie
 insuffisante en calcul à la volée.
 
 ## Conséquences
-- Nécessite validation produit explicite (c'est un écart d'interprétation par
-  rapport à une lecture littérale du brief) avant implémentation Phase 5/14.
+- Validé : cette interprétation sera implémentée telle quelle en Phase 5
+  (Trend Engine) et Phase 14 (Personalization).

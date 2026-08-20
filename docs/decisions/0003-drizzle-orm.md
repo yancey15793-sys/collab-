@@ -1,7 +1,7 @@
 # ADR-0003 — Drizzle ORM plutôt que Prisma
 
 ## Statut
-Proposé.
+Accepté (validé par l'utilisateur le 2026-08-19).
 
 ## Contexte
 Le brief propose "Drizzle ORM ou Prisma" pour PostgreSQL.

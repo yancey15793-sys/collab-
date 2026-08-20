@@ -1,7 +1,8 @@
 # RSS/Atom Ingestion Engine
 
-Contrat défini en Phase 0 (`packages/ingestion/src/index.ts`), implémentation
-en Phase 1.
+**Implémenté (Phase 1).** Contrat : `packages/ingestion/src/index.ts`.
+Adaptateur HTTP+parsing : `packages/ingestion` (`NodeRssAtomFetcher`,
+`parseFeed`). Orchestration : `packages/pipeline` (`IngestionService`).
 
 ## Pipeline
 
@@ -9,16 +10,26 @@ en Phase 1.
 fetch → validate → parse → normalize → sanitize → deduplicate → persist
 ```
 
-- **fetch** — HTTP GET conditionnel (ETag / Last-Modified), timeout configurable
-  (`INGESTION_TIMEOUT_MS`), retries avec backoff exponentiel (max 3 tentatives).
-- **validate** — content-type, taille, XML bien formé.
-- **parse** — RSS 2.0 et Atom via une librairie de parsing dédiée
-  (`rss-parser` pressenti — décision à confirmer en Phase 1), gestion des
-  champs manquants et des encodages non-UTF8.
-- **normalize** — vers `RawFeedItem` (packages/ingestion), URLs absolutisées,
-  dates parsées en UTC, HTML nettoyé (sanitize) avant stockage.
-- **deduplicate** — voir "Déduplication" ci-dessous, avant persistance.
-- **persist** — `ArticleRepository.create`, statut initial `INGESTED`.
+- **fetch** (`fetcher.ts`) — HTTP GET conditionnel (`If-None-Match` /
+  `If-Modified-Since`, réponse `304` traitée comme `NOT_MODIFIED`), timeout via
+  `AbortController` (`INGESTION_TIMEOUT_MS`), retries avec backoff exponentiel
+  (3 tentatives, uniquement sur timeout/erreur réseau/5xx/429 — jamais sur 4xx
+  définitif). Suit les redirections (comportement natif de `fetch`).
+- **validate / parse** (`parse.ts`) — RSS 2.0 et Atom via `rss-parser`
+  (auto-détection du format), fonction pure testée avec des fixtures XML. Les
+  items sans titre ou sans lien exploitable sont ignorés et comptés
+  (`skippedCount`) plutôt que de faire échouer tout le flux.
+- **normalize** (`normalize-url.ts`, `hash.ts`) — URL canonique (tracking
+  params retirés, host en minuscules, trailing slash), hash de contenu
+  (`sha256(sourceId + titre normalisé + date)`).
+- **sanitize** (`sanitize.ts`, via `sanitize-html`) — allowlist stricte de
+  balises pour le contenu HTML stocké ; version texte brut pour la description
+  et le comptage de mots.
+- **deduplicate** — niveaux 1-3 implémentés dans `IngestionService` avant tout
+  insert (voir ci-dessous).
+- **persist** — `ArticleRepository.create`, statut initial `INGESTED`. Une
+  violation de contrainte unique concurrente (deux cycles qui se chevauchent)
+  est traitée comme un doublon, pas comme une erreur.
 
 ## Isolation par source
 
@@ -31,13 +42,13 @@ désactiver automatiquement.
 
 ## Déduplication (multi-niveaux)
 
-| Niveau | Méthode | Où |
-|---|---|---|
-| 1 | `canonicalUrl` identique | avant insert (`ArticleRepository.findByCanonicalUrl`) |
-| 2 | URL normalisée (tracking params retirés, trailing slash, casse) | étape `normalize` |
-| 3 | `hash = sha256(sourceId + normalizedTitle + publishedAt)` | contrainte unique DB (`articles.hash`) |
-| 4 | similarité de titre (inter-sources, même événement) | étape `enrichment`, avant Story Engine |
-| 5 | similarité sémantique | réservé pour l'intégration future d'embeddings |
+| Niveau | Méthode                                                         | Où                                                    |
+| ------ | --------------------------------------------------------------- | ----------------------------------------------------- |
+| 1      | `canonicalUrl` identique                                        | avant insert (`ArticleRepository.findByCanonicalUrl`) |
+| 2      | URL normalisée (tracking params retirés, trailing slash, casse) | étape `normalize`                                     |
+| 3      | `hash = sha256(sourceId + normalizedTitle + publishedAt)`       | contrainte unique DB (`articles.hash`)                |
+| 4      | similarité de titre (inter-sources, même événement)             | étape `enrichment`, avant Story Engine                |
+| 5      | similarité sémantique                                           | réservé pour l'intégration future d'embeddings        |
 
 Les niveaux 1-3 empêchent les doublons **exacts** (même article réingéré, flux
 dupliqué) ; le niveau 4 alimente en réalité le **Story Engine** (regrouper des

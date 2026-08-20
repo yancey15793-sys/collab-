@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@briefeed/domain": "*",
+    "@briefeed/ingestion": "*",
     "@briefeed/shared": "*"
   },
   "devDependencies": {

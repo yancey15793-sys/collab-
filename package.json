@@ -2,6 +2,7 @@
   "name": "briefeed",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "description": "Briefeed — Personal News Intelligence Engine",
   "engines": {
     "node": ">=20"

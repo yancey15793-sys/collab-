@@ -20,14 +20,14 @@ puisse répondre à "Pourquoi cette Story est-elle tendance ?" sans recalcul.
 
 ## Calcul des métriques normalisées (0..1) — Phase 5
 
-| Métrique | Calcul proposé (MVP) |
-|---|---|
-| `velocity` | ratio articles(3h) / articles(3h précédentes), borné et normalisé (sigmoïde ou clamp) |
-| `novelty` | inverse de la récurrence du sujet : décroît si des Stories très similaires ont été créées récemment sur les mêmes entités |
-| `sourceDiversity` | sources distinctes de la Story / sources actives connues dans sa catégorie |
-| `articleVolume` | `log(articleCount + 1)` normalisé (évite qu'une rafale d'un seul agrégateur domine) |
-| `confirmation` | proportion de sources indépendantes (hors doublons du même groupe éditorial) corroborant, avec un plancher (ex: ≥3 sources) |
-| `freshness` | décroissance exponentielle depuis `lastUpdatedAt` (`e^-λt`) |
+| Métrique          | Calcul proposé (MVP)                                                                                                        |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `velocity`        | ratio articles(3h) / articles(3h précédentes), borné et normalisé (sigmoïde ou clamp)                                       |
+| `novelty`         | inverse de la récurrence du sujet : décroît si des Stories très similaires ont été créées récemment sur les mêmes entités   |
+| `sourceDiversity` | sources distinctes de la Story / sources actives connues dans sa catégorie                                                  |
+| `articleVolume`   | `log(articleCount + 1)` normalisé (évite qu'une rafale d'un seul agrégateur domine)                                         |
+| `confirmation`    | proportion de sources indépendantes (hors doublons du même groupe éditorial) corroborant, avec un plancher (ex: ≥3 sources) |
+| `freshness`       | décroissance exponentielle depuis `lastUpdatedAt` (`e^-λt`)                                                                 |
 
 `userAffinity` (colonne `TREND`) est un signal agrégé, pas un score par
 utilisateur — voir `docs/domain-model.md` §Point à challenger. Il n'entre pas

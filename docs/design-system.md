@@ -40,8 +40,8 @@ de compréhension, pas une simple ligne de flux.
 
 ## Principe UI
 
-Avant chaque composant : *"quelle information l'utilisateur doit-il comprendre
-ici ?"* — jamais *"quelle carte pouvons-nous afficher ?"*.
+Avant chaque composant : _"quelle information l'utilisateur doit-il comprendre
+ici ?"_ — jamais _"quelle carte pouvons-nous afficher ?"_.
 
 ## Densité progressive (règle UX critique)
 

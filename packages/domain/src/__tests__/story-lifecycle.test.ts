@@ -18,20 +18,25 @@ describe('nextStoryStatus', () => {
 
   it('promotes ACTIVE to DEVELOPING on a spike in article velocity', () => {
     expect(
-      nextStoryStatus({ ...base, currentStatus: 'ACTIVE', sourceCount: 3, articleVelocityRatio: 2 }),
+      nextStoryStatus({
+        ...base,
+        currentStatus: 'ACTIVE',
+        sourceCount: 3,
+        articleVelocityRatio: 2,
+      }),
     ).toBe('DEVELOPING');
   });
 
   it('demotes ACTIVE to DORMANT after the configured inactivity window', () => {
-    expect(
-      nextStoryStatus({ ...base, currentStatus: 'ACTIVE', hoursSinceLastUpdate: 49 }),
-    ).toBe('DORMANT');
+    expect(nextStoryStatus({ ...base, currentStatus: 'ACTIVE', hoursSinceLastUpdate: 49 })).toBe(
+      'DORMANT',
+    );
   });
 
   it('lets a DORMANT story wake back up to ACTIVE on fresh activity', () => {
-    expect(
-      nextStoryStatus({ ...base, currentStatus: 'DORMANT', hoursSinceLastUpdate: 0.5 }),
-    ).toBe('ACTIVE');
+    expect(nextStoryStatus({ ...base, currentStatus: 'DORMANT', hoursSinceLastUpdate: 0.5 })).toBe(
+      'ACTIVE',
+    );
   });
 
   it('archives regardless of current status once the archive threshold is hit', () => {
@@ -41,8 +46,8 @@ describe('nextStoryStatus', () => {
   });
 
   it('never revives an ARCHIVED story automatically', () => {
-    expect(
-      nextStoryStatus({ ...base, currentStatus: 'ARCHIVED', hoursSinceLastUpdate: 0 }),
-    ).toBe('ARCHIVED');
+    expect(nextStoryStatus({ ...base, currentStatus: 'ARCHIVED', hoursSinceLastUpdate: 0 })).toBe(
+      'ARCHIVED',
+    );
   });
 });

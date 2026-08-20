@@ -38,14 +38,27 @@ Toutes les listes sont paginées (`limit`/`cursor`), jamais de retour non borné
   title: string;
   summary: string | null;
   importance: number;
-  trend: { score: number; contributions: Record<string, number> };
+  trend: {
+    score: number;
+    contributions: Record<string, number>;
+  }
   updatedAt: string;
 
-  metrics: { articleCount: number; sourceCount: number; eventCount: number };
+  metrics: {
+    articleCount: number;
+    sourceCount: number;
+    eventCount: number;
+  }
 
   timeline: Array<{ id: string; title: string; timestamp: string; importance: number }>;
   sources: Array<{ id: string; name: string; favicon: string | null; articleCount: number }>;
-  articles: Array<{ id: string; title: string; sourceName: string; publishedAt: string; url: string }>;
+  articles: Array<{
+    id: string;
+    title: string;
+    sourceName: string;
+    publishedAt: string;
+    url: string;
+  }>;
   entities: Array<{ id: string; name: string; type: string }>;
   relatedStories: Array<{ id: string; title: string; slug: string }>;
 }

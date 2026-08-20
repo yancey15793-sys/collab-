@@ -57,8 +57,22 @@ describe('calculateTrendScore', () => {
 
   it('respects custom weights', () => {
     const result = calculateTrendScore(
-      { velocity: 1, novelty: 1, sourceDiversity: 0, articleVolume: 0, confirmation: 0, freshness: 0 },
-      { velocity: 0.5, novelty: 0.5, sourceDiversity: 0, articleVolume: 0, confirmation: 0, freshness: 0 },
+      {
+        velocity: 1,
+        novelty: 1,
+        sourceDiversity: 0,
+        articleVolume: 0,
+        confirmation: 0,
+        freshness: 0,
+      },
+      {
+        velocity: 0.5,
+        novelty: 0.5,
+        sourceDiversity: 0,
+        articleVolume: 0,
+        confirmation: 0,
+        freshness: 0,
+      },
     );
     expect(result.score).toBeCloseTo(1, 5);
   });

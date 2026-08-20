@@ -14,19 +14,14 @@
 export type ArticleStatus = 'INGESTED' | 'NORMALIZED' | 'ENRICHED' | 'CLUSTERED' | 'FAILED';
 
 export type EntityType =
-  | 'PERSON'
-  | 'COMPANY'
-  | 'ORGANIZATION'
-  | 'LOCATION'
-  | 'PRODUCT'
-  | 'SPORT'
-  | 'EVENT';
+  'PERSON' | 'COMPANY' | 'ORGANIZATION' | 'LOCATION' | 'PRODUCT' | 'SPORT' | 'EVENT';
 
 /**
  * Cycle de vie d'une Story. Les transitions sont gérées exclusivement par
  * `story-lifecycle.ts` — jamais assignées directement ailleurs dans le code.
  */
-export type StoryStatus = 'DISCOVERED' | 'ACTIVE' | 'DEVELOPING' | 'STABLE' | 'DORMANT' | 'ARCHIVED';
+export type StoryStatus =
+  'DISCOVERED' | 'ACTIVE' | 'DEVELOPING' | 'STABLE' | 'DORMANT' | 'ARCHIVED';
 
 export type SummaryType = 'HEADLINE' | 'BRIEF' | 'OVERVIEW' | 'DIGEST' | 'DETAILED';
 
@@ -53,6 +48,10 @@ export interface Source {
   favicon: string | null;
   description: string | null;
   active: boolean;
+  /** Utilisés pour le fetch conditionnel (HTTP 304) — voir docs/ingestion.md. */
+  etag: string | null;
+  lastModified: string | null;
+  lastSyncedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -230,8 +229,9 @@ export interface SourceSyncLog {
   id: string;
   sourceId: string;
   startedAt: Date;
+  /** null tant que le cycle est en cours — renseigné uniquement par SourceSyncLogRepository.finish(). */
   finishedAt: Date | null;
-  status: SourceSyncStatus;
+  status: SourceSyncStatus | null;
   articlesFetched: number;
   articlesNew: number;
   errorMessage: string | null;

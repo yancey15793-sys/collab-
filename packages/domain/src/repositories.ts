@@ -54,7 +54,10 @@ export interface StoryRepository {
   create(story: Omit<Story, 'id' | 'createdAt' | 'updatedAt'>): Promise<Story>;
   attachArticle(link: StoryArticle): Promise<void>;
   updateStatus(id: string, status: StoryStatus): Promise<void>;
-  updateCounters(id: string, patch: Partial<Pick<Story, 'sourceCount' | 'articleCount' | 'lastUpdatedAt'>>): Promise<void>;
+  updateCounters(
+    id: string,
+    patch: Partial<Pick<Story, 'sourceCount' | 'articleCount' | 'lastUpdatedAt'>>,
+  ): Promise<void>;
   listByStatus(status: StoryStatus): Promise<Story[]>;
   listTrending(limit: number): Promise<Story[]>;
 }

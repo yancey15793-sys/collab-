@@ -13,10 +13,13 @@ SOURCES → ARTICLES → ENTITÉS → ÉVÉNEMENTS → STORIES → TENDANCES →
 
 ## État du projet
 
-**Phase 0 — Architecture.** Le moteur (ingestion, Story Engine, Trend Engine,
-IA) n'est pas encore implémenté. Cette phase pose le modèle de données, les
-frontières d'architecture, et les décisions techniques, avant tout
-développement conséquent. Voir `docs/architecture.md` et `docs/decisions/`.
+- **Phase 0 — Architecture.** ✅ Fait. Modèle de données, frontières
+  d'architecture, décisions techniques (`docs/architecture.md`, `docs/decisions/`).
+- **Phase 1 — Ingestion RSS/Atom.** ✅ Fait. Fetch conditionnel (ETag/304),
+  retries, parsing RSS 2.0 + Atom, sanitization, déduplication niveaux 1-3,
+  persistance, logs de synchronisation par source. Voir `docs/ingestion.md`.
+- **Phase 2+ (normalisation avancée, Story Engine, Trend Engine, IA, API, UI)**
+  — pas encore implémentées.
 
 ## Structure
 
@@ -39,16 +42,21 @@ docs/        Architecture, modèle de données, ADRs
 
 ```bash
 npm install
-cp .env.example .env   # renseigner DATABASE_URL et GROQ_API_KEY
+cp .env.example .env   # renseigner DATABASE_URL (Neon, cf. ADR-0007) et GROQ_API_KEY
 
-npm test                # tests unitaires (packages/domain — lifecycle, trend score)
+npm test                # 35 tests : lifecycle, trend score, parsing RSS/Atom, dedup, ingestion service
 npm run db:generate     # génère les migrations Drizzle depuis packages/db/src/schema.ts
+npm run db:migrate      # applique les migrations sur DATABASE_URL
+
+npm run dev:worker      # lance le cycle d'ingestion (nécessite DATABASE_URL + des sources en base)
+npm run dev:api         # démarre l'API (GET /health)
 ```
 
-`apps/api` et `apps/worker` ne sont que des squelettes à ce stade (healthcheck
-uniquement) — l'implémentation du pipeline arrive après validation de
-l'architecture. Voir `docs/decisions/0007-postgres-dev-environment.md` pour la
-question ouverte sur l'environnement PostgreSQL de développement.
+`apps/api` reste un squelette (healthcheck uniquement, les routes /api/*
+arrivent en Phase 7). `apps/worker` exécute réellement l'ingestion RSS/Atom
+(Phase 1) — il lui faut une base migrée et au moins une ligne dans `sources`
+(pas encore d'endpoint pour en ajouter une : à insérer manuellement le temps
+de la Phase 7, ou via `db:studio`).
 
 ## Documentation
 

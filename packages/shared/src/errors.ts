@@ -9,7 +9,10 @@ export abstract class AppError extends Error {
   abstract readonly code: string;
   abstract readonly httpStatus: number;
 
-  constructor(message: string, override readonly cause?: unknown) {
+  constructor(
+    message: string,
+    override readonly cause?: unknown,
+  ) {
     super(message);
     this.name = new.target.name;
   }

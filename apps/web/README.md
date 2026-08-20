@@ -2,8 +2,8 @@
 
 Volontairement vide à ce stade.
 
-Le brief est explicite : *"Ne commence pas par construire des cartes HTML.
-Ne commence pas par dessiner une homepage."* Le scaffold Vite + React + TypeScript
+Le brief est explicite : _"Ne commence pas par construire des cartes HTML.
+Ne commence pas par dessiner une homepage."_ Le scaffold Vite + React + TypeScript
 sera créé en **Phase 8**, une fois l'API (Phase 7) disponible — en suivant l'ordre
 d'implémentation défini dans `docs/design-system.md` §Design Implementation :
 

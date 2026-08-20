@@ -26,10 +26,10 @@ USER ──< USER_SOURCE                          AI_SUMMARY
 Toutes les entités du brief (§7) sont implémentées telles quelles. Extensions
 ajoutées et pourquoi :
 
-| Ajout | Raison |
-|---|---|
+| Ajout                     | Raison                                                                                                                                                                                                                                                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `TOPIC` (+ `STORY_TOPIC`) | Le brief distingue "Vos sujets" / Discover (catégories curées : Technologie > AI, Cybersecurity...) des `ENTITY` extraites automatiquement (personnes, entreprises...). Sans `TOPIC`, `USER_PREFERENCE.topic` resterait une string libre non normalisée — invérifiable et non explorable dans Discover. |
-| `SOURCE_SYNC_LOG` | Le brief demande d'afficher "dernière synchronisation" et "état du feed" par source (§19), et des logs structurés d'ingestion (§36). Une table dédiée rend cet état interrogeable par l'UI, pas seulement journalisé. |
+| `SOURCE_SYNC_LOG`         | Le brief demande d'afficher "dernière synchronisation" et "état du feed" par source (§19), et des logs structurés d'ingestion (§36). Une table dédiée rend cet état interrogeable par l'UI, pas seulement journalisé.                                                                                   |
 
 ## Table par table (résumé)
 
@@ -46,7 +46,7 @@ ajoutées et pourquoi :
 - **EVENT** — un développement daté à l'intérieur d'une Story (timeline).
 - **TREND** — snapshot **append-only** du Trend Engine. On garde l'historique
   pour calculer des deltas ("+42% depuis 3h") sans recalcul rétroactif.
-- **USER**, **USER_SOURCE**, **USER_FOLDER(_SOURCE)**, **USER_SAVED_(ARTICLE\|STORY)**, **USER_PREFERENCE** — personnalisation, fidèles au brief.
+- **USER**, **USER_SOURCE**, **USER_FOLDER(\_SOURCE)**, **USER_SAVED\_(ARTICLE\|STORY)**, **USER_PREFERENCE** — personnalisation, fidèles au brief.
 - **AI_SUMMARY** — synthèse structurée et versionnée (`model` + `promptVersion`), clé de cache unique `(storyId, type, promptVersion)`.
 
 ## Point à challenger : `TREND.userAffinity`

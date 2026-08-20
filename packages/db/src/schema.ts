@@ -71,26 +71,36 @@ export const sourceSyncStatusEnum = pgEnum('source_sync_status', ['SUCCESS', 'PA
 // Sources
 // ---------------------------------------------------------------------------
 
-export const sources = pgTable('sources', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull(),
-  feedUrl: text('feed_url').notNull(),
-  websiteUrl: text('website_url'),
-  language: text('language'),
-  country: text('country'),
-  category: text('category'),
-  favicon: text('favicon'),
-  description: text('description'),
-  active: boolean('active').notNull().default(true),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  feedUrlUnique: uniqueIndex('sources_feed_url_unique').on(t.feedUrl),
-}));
+export const sources = pgTable(
+  'sources',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    feedUrl: text('feed_url').notNull(),
+    websiteUrl: text('website_url'),
+    language: text('language'),
+    country: text('country'),
+    category: text('category'),
+    favicon: text('favicon'),
+    description: text('description'),
+    active: boolean('active').notNull().default(true),
+    /** Fetch conditionnel (HTTP 304) — voir docs/ingestion.md. */
+    etag: text('etag'),
+    lastModified: text('last_modified'),
+    lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    feedUrlUnique: uniqueIndex('sources_feed_url_unique').on(t.feedUrl),
+  }),
+);
 
 export const sourceSyncLogs = pgTable('source_sync_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
-  sourceId: uuid('source_id').notNull().references(() => sources.id, { onDelete: 'cascade' }),
+  sourceId: uuid('source_id')
+    .notNull()
+    .references(() => sources.id, { onDelete: 'cascade' }),
   startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
   finishedAt: timestamp('finished_at', { withTimezone: true }),
   status: sourceSyncStatusEnum('status'),
@@ -103,121 +113,175 @@ export const sourceSyncLogs = pgTable('source_sync_logs', {
 // Articles
 // ---------------------------------------------------------------------------
 
-export const articles = pgTable('articles', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  sourceId: uuid('source_id').notNull().references(() => sources.id, { onDelete: 'cascade' }),
-  title: text('title').notNull(),
-  url: text('url').notNull(),
-  canonicalUrl: text('canonical_url'),
-  author: text('author'),
-  description: text('description'),
-  content: text('content'),
-  imageUrl: text('image_url'),
-  publishedAt: timestamp('published_at', { withTimezone: true }).notNull(),
-  fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
-  language: text('language'),
-  /** sha256(sourceId + normalizedTitle + publishedAt) — dédup niveau 3. */
-  hash: text('hash').notNull(),
-  wordCount: integer('word_count'),
-  readingTime: integer('reading_time'),
-  status: articleStatusEnum('status').notNull().default('INGESTED'),
-}, (t) => ({
-  hashUnique: uniqueIndex('articles_hash_unique').on(t.hash),
-  urlUnique: uniqueIndex('articles_url_unique').on(t.url),
-}));
+export const articles = pgTable(
+  'articles',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sourceId: uuid('source_id')
+      .notNull()
+      .references(() => sources.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    url: text('url').notNull(),
+    canonicalUrl: text('canonical_url'),
+    author: text('author'),
+    description: text('description'),
+    content: text('content'),
+    imageUrl: text('image_url'),
+    publishedAt: timestamp('published_at', { withTimezone: true }).notNull(),
+    fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+    language: text('language'),
+    /** sha256(sourceId + normalizedTitle + publishedAt) — dédup niveau 3. */
+    hash: text('hash').notNull(),
+    wordCount: integer('word_count'),
+    readingTime: integer('reading_time'),
+    status: articleStatusEnum('status').notNull().default('INGESTED'),
+  },
+  (t) => ({
+    hashUnique: uniqueIndex('articles_hash_unique').on(t.hash),
+    urlUnique: uniqueIndex('articles_url_unique').on(t.url),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // Entities & Topics
 // ---------------------------------------------------------------------------
 
-export const entities = pgTable('entities', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  type: entityTypeEnum('type').notNull(),
-  name: text('name').notNull(),
-  normalizedName: text('normalized_name').notNull(),
-  description: text('description'),
-}, (t) => ({
-  normalizedNameTypeUnique: uniqueIndex('entities_normalized_name_type_unique').on(
-    t.normalizedName,
-    t.type,
-  ),
-}));
+export const entities = pgTable(
+  'entities',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    type: entityTypeEnum('type').notNull(),
+    name: text('name').notNull(),
+    normalizedName: text('normalized_name').notNull(),
+    description: text('description'),
+  },
+  (t) => ({
+    normalizedNameTypeUnique: uniqueIndex('entities_normalized_name_type_unique').on(
+      t.normalizedName,
+      t.type,
+    ),
+  }),
+);
 
-export const articleEntities = pgTable('article_entities', {
-  articleId: uuid('article_id').notNull().references(() => articles.id, { onDelete: 'cascade' }),
-  entityId: uuid('entity_id').notNull().references(() => entities.id, { onDelete: 'cascade' }),
-  confidence: real('confidence').notNull(),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.articleId, t.entityId] }),
-}));
+export const articleEntities = pgTable(
+  'article_entities',
+  {
+    articleId: uuid('article_id')
+      .notNull()
+      .references(() => articles.id, { onDelete: 'cascade' }),
+    entityId: uuid('entity_id')
+      .notNull()
+      .references(() => entities.id, { onDelete: 'cascade' }),
+    confidence: real('confidence').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.articleId, t.entityId] }),
+  }),
+);
 
 /** Taxonomie curée (Discover) — distincte des entités extraites automatiquement. */
-export const topics = pgTable('topics', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  slug: text('slug').notNull(),
-  name: text('name').notNull(),
-  parentTopicId: uuid('parent_topic_id'),
-}, (t) => ({
-  slugUnique: uniqueIndex('topics_slug_unique').on(t.slug),
-}));
+export const topics = pgTable(
+  'topics',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    slug: text('slug').notNull(),
+    name: text('name').notNull(),
+    parentTopicId: uuid('parent_topic_id'),
+  },
+  (t) => ({
+    slugUnique: uniqueIndex('topics_slug_unique').on(t.slug),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // Stories
 // ---------------------------------------------------------------------------
 
-export const stories = pgTable('stories', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  title: text('title').notNull(),
-  slug: text('slug').notNull(),
-  summary: text('summary'),
-  status: storyStatusEnum('status').notNull().default('DISCOVERED'),
-  /** Poids éditorial 0..1 — distinct du trendScore (vitesse) : une Story peut être importante sans être "en accélération". */
-  importanceScore: real('importance_score').notNull().default(0),
-  trendScore: real('trend_score').notNull().default(0),
-  noveltyScore: real('novelty_score').notNull().default(0),
-  velocityScore: real('velocity_score').notNull().default(0),
-  sourceCount: integer('source_count').notNull().default(0),
-  articleCount: integer('article_count').notNull().default(0),
-  firstSeenAt: timestamp('first_seen_at', { withTimezone: true }).notNull().defaultNow(),
-  lastUpdatedAt: timestamp('last_updated_at', { withTimezone: true }).notNull().defaultNow(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  slugUnique: uniqueIndex('stories_slug_unique').on(t.slug),
-}));
+export const stories = pgTable(
+  'stories',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    title: text('title').notNull(),
+    slug: text('slug').notNull(),
+    summary: text('summary'),
+    status: storyStatusEnum('status').notNull().default('DISCOVERED'),
+    /** Poids éditorial 0..1 — distinct du trendScore (vitesse) : une Story peut être importante sans être "en accélération". */
+    importanceScore: real('importance_score').notNull().default(0),
+    trendScore: real('trend_score').notNull().default(0),
+    noveltyScore: real('novelty_score').notNull().default(0),
+    velocityScore: real('velocity_score').notNull().default(0),
+    sourceCount: integer('source_count').notNull().default(0),
+    articleCount: integer('article_count').notNull().default(0),
+    firstSeenAt: timestamp('first_seen_at', { withTimezone: true }).notNull().defaultNow(),
+    lastUpdatedAt: timestamp('last_updated_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    slugUnique: uniqueIndex('stories_slug_unique').on(t.slug),
+  }),
+);
 
-export const storyArticles = pgTable('story_articles', {
-  storyId: uuid('story_id').notNull().references(() => stories.id, { onDelete: 'cascade' }),
-  articleId: uuid('article_id').notNull().references(() => articles.id, { onDelete: 'cascade' }),
-  relevanceScore: real('relevance_score').notNull(),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.storyId, t.articleId] }),
-}));
+export const storyArticles = pgTable(
+  'story_articles',
+  {
+    storyId: uuid('story_id')
+      .notNull()
+      .references(() => stories.id, { onDelete: 'cascade' }),
+    articleId: uuid('article_id')
+      .notNull()
+      .references(() => articles.id, { onDelete: 'cascade' }),
+    relevanceScore: real('relevance_score').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.storyId, t.articleId] }),
+  }),
+);
 
-export const storyEntities = pgTable('story_entities', {
-  storyId: uuid('story_id').notNull().references(() => stories.id, { onDelete: 'cascade' }),
-  entityId: uuid('entity_id').notNull().references(() => entities.id, { onDelete: 'cascade' }),
-  confidence: real('confidence').notNull(),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.storyId, t.entityId] }),
-}));
+export const storyEntities = pgTable(
+  'story_entities',
+  {
+    storyId: uuid('story_id')
+      .notNull()
+      .references(() => stories.id, { onDelete: 'cascade' }),
+    entityId: uuid('entity_id')
+      .notNull()
+      .references(() => entities.id, { onDelete: 'cascade' }),
+    confidence: real('confidence').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.storyId, t.entityId] }),
+  }),
+);
 
-export const storyTopics = pgTable('story_topics', {
-  storyId: uuid('story_id').notNull().references(() => stories.id, { onDelete: 'cascade' }),
-  topicId: uuid('topic_id').notNull().references(() => topics.id, { onDelete: 'cascade' }),
-  confidence: real('confidence').notNull(),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.storyId, t.topicId] }),
-}));
+export const storyTopics = pgTable(
+  'story_topics',
+  {
+    storyId: uuid('story_id')
+      .notNull()
+      .references(() => stories.id, { onDelete: 'cascade' }),
+    topicId: uuid('topic_id')
+      .notNull()
+      .references(() => topics.id, { onDelete: 'cascade' }),
+    confidence: real('confidence').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.storyId, t.topicId] }),
+  }),
+);
 
 export const events = pgTable('events', {
   id: uuid('id').primaryKey().defaultRandom(),
-  storyId: uuid('story_id').notNull().references(() => stories.id, { onDelete: 'cascade' }),
+  storyId: uuid('story_id')
+    .notNull()
+    .references(() => stories.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   description: text('description'),
   timestamp: timestamp('timestamp', { withTimezone: true }).notNull(),
   importance: real('importance').notNull().default(0),
-  sourceArticleId: uuid('source_article_id').notNull().references(() => articles.id, { onDelete: 'cascade' }),
+  sourceArticleId: uuid('source_article_id')
+    .notNull()
+    .references(() => articles.id, { onDelete: 'cascade' }),
 });
 
 /**
@@ -228,7 +292,9 @@ export const events = pgTable('events', {
  */
 export const trends = pgTable('trends', {
   id: uuid('id').primaryKey().defaultRandom(),
-  storyId: uuid('story_id').notNull().references(() => stories.id, { onDelete: 'cascade' }),
+  storyId: uuid('story_id')
+    .notNull()
+    .references(() => stories.id, { onDelete: 'cascade' }),
   score: real('score').notNull(),
   velocity: real('velocity').notNull(),
   novelty: real('novelty').notNull(),
@@ -249,69 +315,117 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const userSources = pgTable('user_sources', {
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  sourceId: uuid('source_id').notNull().references(() => sources.id, { onDelete: 'cascade' }),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.userId, t.sourceId] }),
-}));
+export const userSources = pgTable(
+  'user_sources',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    sourceId: uuid('source_id')
+      .notNull()
+      .references(() => sources.id, { onDelete: 'cascade' }),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.sourceId] }),
+  }),
+);
 
 export const userFolders = pgTable('user_folders', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
 });
 
-export const userFolderSources = pgTable('user_folder_sources', {
-  folderId: uuid('folder_id').notNull().references(() => userFolders.id, { onDelete: 'cascade' }),
-  sourceId: uuid('source_id').notNull().references(() => sources.id, { onDelete: 'cascade' }),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.folderId, t.sourceId] }),
-}));
+export const userFolderSources = pgTable(
+  'user_folder_sources',
+  {
+    folderId: uuid('folder_id')
+      .notNull()
+      .references(() => userFolders.id, { onDelete: 'cascade' }),
+    sourceId: uuid('source_id')
+      .notNull()
+      .references(() => sources.id, { onDelete: 'cascade' }),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.folderId, t.sourceId] }),
+  }),
+);
 
-export const userSavedArticles = pgTable('user_saved_articles', {
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  articleId: uuid('article_id').notNull().references(() => articles.id, { onDelete: 'cascade' }),
-  savedAt: timestamp('saved_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.userId, t.articleId] }),
-}));
+export const userSavedArticles = pgTable(
+  'user_saved_articles',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    articleId: uuid('article_id')
+      .notNull()
+      .references(() => articles.id, { onDelete: 'cascade' }),
+    savedAt: timestamp('saved_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.articleId] }),
+  }),
+);
 
-export const userSavedStories = pgTable('user_saved_stories', {
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  storyId: uuid('story_id').notNull().references(() => stories.id, { onDelete: 'cascade' }),
-  savedAt: timestamp('saved_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.userId, t.storyId] }),
-}));
+export const userSavedStories = pgTable(
+  'user_saved_stories',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    storyId: uuid('story_id')
+      .notNull()
+      .references(() => stories.id, { onDelete: 'cascade' }),
+    savedAt: timestamp('saved_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.storyId] }),
+  }),
+);
 
 /** weight ∈ [-1, 1] : ajusté par les signaux implicites (lecture, dismiss...) + explicites. */
-export const userPreferences = pgTable('user_preferences', {
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  topicId: uuid('topic_id').notNull().references(() => topics.id, { onDelete: 'cascade' }),
-  weight: real('weight').notNull().default(0),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.userId, t.topicId] }),
-}));
+export const userPreferences = pgTable(
+  'user_preferences',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    topicId: uuid('topic_id')
+      .notNull()
+      .references(() => topics.id, { onDelete: 'cascade' }),
+    weight: real('weight').notNull().default(0),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.topicId] }),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // AI Summaries
 // ---------------------------------------------------------------------------
 
-export const aiSummaries = pgTable('ai_summaries', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  storyId: uuid('story_id').notNull().references(() => stories.id, { onDelete: 'cascade' }),
-  type: summaryTypeEnum('type').notNull(),
-  /** AiSummaryContent (packages/domain) — validé par Zod avant persistance. */
-  content: text('content').notNull(),
-  model: text('model').notNull(),
-  promptVersion: text('prompt_version').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  // Une synthèse identique (même story, type, version de prompt) ne doit pas être
-  // régénérée : c'est la clé du cache AI (section 33 du brief).
-  cacheKey: uniqueIndex('ai_summaries_cache_key').on(t.storyId, t.type, t.promptVersion),
-}));
+export const aiSummaries = pgTable(
+  'ai_summaries',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    storyId: uuid('story_id')
+      .notNull()
+      .references(() => stories.id, { onDelete: 'cascade' }),
+    type: summaryTypeEnum('type').notNull(),
+    /** AiSummaryContent (packages/domain) — validé par Zod avant persistance. */
+    content: text('content').notNull(),
+    model: text('model').notNull(),
+    promptVersion: text('prompt_version').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    // Une synthèse identique (même story, type, version de prompt) ne doit pas être
+    // régénérée : c'est la clé du cache AI (section 33 du brief).
+    cacheKey: uniqueIndex('ai_summaries_cache_key').on(t.storyId, t.type, t.promptVersion),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // Relations (pour les requêtes Drizzle `with: {...}`)

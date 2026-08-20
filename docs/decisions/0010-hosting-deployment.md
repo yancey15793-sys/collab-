@@ -2,7 +2,8 @@
 
 ## Statut
 
-Proposé.
+Accepté (validé par l'utilisateur le 2026-08-20 — Vercel/Render écartés,
+Railway retenu à la place).
 
 ## Contexte
 
@@ -40,38 +41,45 @@ GitHub (déploiement automatique à chaque push), distinct de GitHub lui-même.
    par service) et courbe d'apprentissage plus longue pour peu de bénéfice
    à ce stade.
 
-## Décision
+## Décision (révisée)
 
-Option 1, avec un ajustement d'architecture pour le worker :
+Vercel + Render ont été explicitement écartés par l'utilisateur (2026-08-20),
+sans raison technique en cause — préférence pour un hébergeur unique.
+**Option 2 retenue : Railway pour les trois apps.**
 
-- **`apps/web` → Vercel.** Déploiement automatique sur push vers `main`,
-  preview URL sur chaque PR. Le mieux adapté à un frontend Vite/React.
-- **`apps/api` → Render, Web Service.** Déploiement automatique sur push.
-  Sur le tier gratuit, le service peut se mettre en veille après une
-  période d'inactivité et redémarrer avec un délai à la première requête —
-  acceptable pour un MVP, à réévaluer si ça devient gênant.
-- **`apps/worker` → Render, Cron Job (et non un process persistant).**
-  Plutôt que de laisser tourner en continu une boucle `setInterval` (ADR-0004
-  pipeline séquentiel — inchangé), le worker devient un script qui exécute
-  **un seul cycle d'ingestion puis se termine**, déclenché par le
-  scheduler de Render selon `INGESTION_INTERVAL_MINUTES`. Ça correspond
-  mieux à la nature du besoin (tâche périodique, pas un serveur), coûte
-  moins cher/rien à faire tourner, et simplifie l'observabilité (un log
-  clair par exécution plutôt qu'un process longue durée à surveiller).
-  Conséquence code : `apps/worker/src/index.ts` doit exposer un point
-  d'entrée qui lance `runCycle()` une fois et sort (`process.exit`), au lieu
-  d'une boucle infinie — à faire au moment du câblage du déploiement.
+- Un projet Railway, trois services (`apps/web`, `apps/api`, `apps/worker`),
+  chacun connecté au même repo GitHub avec un répertoire racine différent
+  (monorepo-friendly — Railway détecte `apps/<nom>` via un `railway.json`
+  ou le réglage "Root Directory" par service).
+- Déploiement automatique sur push vers `main` pour les trois services.
+- **`apps/worker` reste conçu comme un cycle unique qui se termine**
+  (et non une boucle `setInterval` infinie) — Railway supporte un
+  "Cron Schedule" par service, qui déclenche une exécution puis laisse le
+  process s'arrêter. Le raisonnement de l'option Render (tâche périodique
+  plutôt que serveur permanent, observabilité par exécution) reste valable
+  indépendamment de l'hébergeur ; seul le mécanisme de déclenchement change.
+  Conséquence code inchangée : `apps/worker/src/index.ts` doit lancer
+  `runCycle()` une fois puis sortir (`process.exit`) au lieu de boucler —
+  à faire au moment du câblage du déploiement.
+- **`apps/api`** : service Railway classique, toujours actif (pas de
+  cron), exposé via une URL publique générée par Railway.
+- **`apps/web`** : servi comme un service Railway également (build Vite →
+  fichiers statiques servis par le service, ou un serveur Node minimal
+  selon ce que Vite/le futur SSR exigent — à trancher en Phase 8).
 
-Les tarifs exacts et limites des tiers gratuits évoluent souvent : à
-vérifier au moment de la création des comptes plutôt que de se fier aux
-chiffres de cette ADR.
+Le tier gratuit de Railway s'est réduit ces derniers temps à un crédit
+d'essai plutôt qu'un palier gratuit permanent : à vérifier au moment de la
+création du compte plutôt que de se fier à un chiffre figé dans cette ADR.
 
 ## Conséquences
 
-- Trois comptes tiers à créer (Vercel, Render), en plus de Neon et GitHub
-  déjà en place.
+- Un seul compte tiers à créer (Railway), en plus de Neon et GitHub déjà
+  en place — plus simple que la première option (deux hébergeurs).
 - Secrets (`DATABASE_URL`, `GROQ_API_KEY`, etc.) à dupliquer dans les
-  panneaux d'environnement de Vercel et Render — jamais commités.
+  variables d'environnement Railway, par service — jamais commités.
 - `apps/web` n'a aujourd'hui aucun contenu réel (Phase 8 pas commencée) :
-  le premier déploiement Vercel servira un placeholder, pas l'application
-  finale.
+  le premier déploiement Railway pour ce service servira un placeholder,
+  pas l'application finale.
+- Administration centralisée sur une seule plateforme (facturation, logs,
+  variables d'environnement) au prix d'une dépendance à un unique
+  fournisseur pour les trois apps.

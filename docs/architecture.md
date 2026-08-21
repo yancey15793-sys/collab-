@@ -46,8 +46,9 @@ briefeed/
     domain/    — Types métier, interfaces de repository, règles pures (lifecycle, trend formula)
     db/        — Schéma Drizzle (PostgreSQL), migrations, implémentations de repository
     ingestion/ — Contrats de fetch/parse RSS-Atom (implémentation Phase 1)
-    pipeline/  — Application Services : Story Engine, Event Engine, Trend Engine (Phases 2-5)
-    ai/        — Client Groq, schémas Zod de sortie structurée, Ask (Phase 6)
+    enrichment/ — Extraction d'entités : Groq structuré + repli heuristique (Phase 2)
+    pipeline/  — Application Services : IngestionService, EnrichmentService, Story/Event/Trend Engine (Phases 1-5)
+    ai/        — Client Groq (synthèses), schémas Zod de sortie structurée, Ask (Phase 6)
     shared/    — Erreurs applicatives partagées, utilitaires transverses
   docs/
 ```

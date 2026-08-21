@@ -57,8 +57,4 @@ clustering — voir `docs/story-engine.md`).
 
 ## Extraction d'entités (Enrichment)
 
-MVP : extraction hybride — appel Groq structuré (extraction d'entités nommées
-en JSON, validé par Zod) avec repli sur une heuristique légère (gazetteer +
-détection de séquences capitalisées) si l'appel IA échoue ou timeout. Un échec
-d'extraction ne bloque jamais la persistance de l'article (statut `ENRICHED`
-non atteint, mais `NORMALIZED` reste lisible) — règle §35 du brief.
+Étape suivante du pipeline, implémentée séparément — voir `docs/enrichment.md`.

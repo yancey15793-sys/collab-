@@ -38,4 +38,8 @@ export class DrizzleArticleRepository implements ArticleRepository {
   async linkEntity(link: ArticleEntity): Promise<void> {
     await this.db.insert(articleEntities).values(link).onConflictDoNothing();
   }
+
+  async listByStatus(status: Article['status'], limit: number): Promise<Article[]> {
+    return this.db.select().from(articles).where(eq(articles.status, status)).limit(limit);
+  }
 }

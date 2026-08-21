@@ -34,6 +34,8 @@ export interface ArticleRepository {
   create(article: Omit<Article, 'id'>): Promise<Article>;
   updateStatus(id: string, status: Article['status']): Promise<void>;
   linkEntity(link: ArticleEntity): Promise<void>;
+  /** Articles en attente d'une étape du pipeline (ex: ENRICHISSEMENT) — bornés par `limit`. */
+  listByStatus(status: Article['status'], limit: number): Promise<Article[]>;
 }
 
 export interface EntityRepository {

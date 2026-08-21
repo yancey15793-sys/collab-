@@ -12,6 +12,8 @@ import type { Article, Entity, Story } from '@briefeed/domain';
 
 export { IngestionService } from './ingestion-service.js';
 export type { IngestionServiceDeps, SourceSyncSummary } from './ingestion-service.js';
+export { EnrichmentService } from './enrichment-service.js';
+export type { EnrichmentServiceDeps, ArticleEnrichmentSummary } from './enrichment-service.js';
 export { mapWithConcurrency } from './concurrency.js';
 
 /** Stratégie de matching Story — MVP = heuristique (entités + titre + temps), future = embeddings (pgvector). */

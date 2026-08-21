@@ -21,8 +21,14 @@ SOURCES → ARTICLES → ENTITÉS → ÉVÉNEMENTS → STORIES → TENDANCES →
   conditionnel (ETag/304), retries, parsing RSS 2.0 + Atom, sanitization,
   déduplication niveaux 1-3, logs de synchronisation par source. Voir
   `docs/ingestion.md`.
-- **Phase 2+ (normalisation avancée, Story Engine, Trend Engine, IA, API, UI)**
-  — pas encore implémentées.
+- **Phase 2 — Enrichissement (extraction d'entités).** ✅ Fait, **validé de
+  bout en bout contre Neon** (2026-08-20) : 20/20 articles TechCrunch enrichis
+  en mode heuristique (pas de `GROQ_API_KEY` fournie), 0 échec. Extraction
+  hybride Groq structuré + repli heuristique (gazetteer + séquences
+  capitalisées), déduplication des entités par `(normalizedName, type)`. Voir
+  `docs/enrichment.md`.
+- **Phase 3+ (dédup avancée niveaux 4-5, Story Engine, Trend Engine, IA
+  Synthesis, API, UI)** — pas encore implémentées.
 
 ## Structure
 
@@ -30,14 +36,15 @@ SOURCES → ARTICLES → ENTITÉS → ÉVÉNEMENTS → STORIES → TENDANCES →
 apps/
   web/       React + TypeScript + Vite       (Phase 8+)
   api/       Fastify + TypeScript, REST typée (Phase 7+)
-  worker/    Ingestion + pipeline             (Phase 1+)
+  worker/    Ingestion + enrichissement       (Phase 1-2)
 packages/
-  domain/    Types métier, interfaces, règles pures (Story lifecycle, Trend formula)
-  db/        Schéma Drizzle (PostgreSQL)
-  ingestion/ Contrats RSS/Atom
-  pipeline/  Story Engine, Event Engine, Trend Engine (contrats)
-  ai/        Client Groq, schémas Zod, Ask (contrats)
-  shared/    Erreurs applicatives partagées
+  domain/     Types métier, interfaces, règles pures (Story lifecycle, Trend formula)
+  db/         Schéma Drizzle (PostgreSQL)
+  ingestion/  Fetch/parse RSS-Atom
+  enrichment/ Extraction d'entités : Groq structuré + repli heuristique
+  pipeline/   Application Services : IngestionService, EnrichmentService, Story/Event/Trend Engine (contrats)
+  ai/         Client Groq (synthèses), schémas Zod, Ask (contrats)
+  shared/     Erreurs applicatives partagées
 docs/        Architecture, modèle de données, ADRs
 ```
 
@@ -47,19 +54,20 @@ docs/        Architecture, modèle de données, ADRs
 npm install
 cp .env.example .env   # renseigner DATABASE_URL (Neon, cf. ADR-0007) et GROQ_API_KEY
 
-npm test                # 35 tests : lifecycle, trend score, parsing RSS/Atom, dedup, ingestion service
+npm test                # 46 tests : lifecycle, trend score, parsing RSS/Atom, dedup, ingestion, enrichissement
 npm run db:generate     # génère les migrations Drizzle depuis packages/db/src/schema.ts
 npm run db:migrate      # applique les migrations sur DATABASE_URL
 
-npm run dev:worker      # lance le cycle d'ingestion (nécessite DATABASE_URL + des sources en base)
+npm run dev:worker      # lance ingestion + enrichissement (nécessite DATABASE_URL + des sources en base)
 npm run dev:api         # démarre l'API (GET /health)
 ```
 
 `apps/api` reste un squelette (healthcheck uniquement, les routes /api/*
-arrivent en Phase 7). `apps/worker` exécute réellement l'ingestion RSS/Atom
-(Phase 1) — il lui faut une base migrée et au moins une ligne dans `sources`
-(pas encore d'endpoint pour en ajouter une : à insérer manuellement le temps
-de la Phase 7, ou via `db:studio`).
+arrivent en Phase 7). `apps/worker` exécute réellement l'ingestion RSS/Atom et
+l'enrichissement (Phases 1-2) — il lui faut une base migrée et au moins une
+ligne dans `sources` (pas encore d'endpoint pour en ajouter une : à insérer
+manuellement le temps de la Phase 7, ou via `db:studio`). Sans `GROQ_API_KEY`,
+l'extraction d'entités tourne automatiquement en mode heuristique seul.
 
 ## Documentation
 

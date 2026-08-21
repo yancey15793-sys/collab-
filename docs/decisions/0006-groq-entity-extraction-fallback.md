@@ -2,7 +2,11 @@
 
 ## Statut
 
-Proposé.
+Accepté — implémenté le 2026-08-20 (`packages/enrichment`, `EnrichmentService`
+dans `packages/pipeline`), validé de bout en bout contre une vraie base Neon
+en mode heuristique (pas de `GROQ_API_KEY` fournie pour l'instant : 20/20
+articles enrichis, 0 échec). Le chemin Groq est codé et testé (repli
+automatique inclus) mais pas encore exercé contre une vraie clé.
 
 ## Contexte
 

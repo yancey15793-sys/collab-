@@ -63,6 +63,9 @@ class InMemoryArticleRepository implements ArticleRepository {
   async linkEntity(_link: ArticleEntity) {
     // non utilisé en Phase 1
   }
+  async listByStatus(status: Article['status'], limit: number) {
+    return this.articles.filter((a) => a.status === status).slice(0, limit);
+  }
 }
 
 class InMemorySyncLogRepository implements SourceSyncLogRepository {

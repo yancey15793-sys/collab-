@@ -8,4 +8,3 @@ coverage/
 .DS_Store
 .turbo/
 *.tsbuildinfo
-drizzle/meta/

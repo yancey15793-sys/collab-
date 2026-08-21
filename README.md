@@ -15,9 +15,12 @@ SOURCES → ARTICLES → ENTITÉS → ÉVÉNEMENTS → STORIES → TENDANCES →
 
 - **Phase 0 — Architecture.** ✅ Fait. Modèle de données, frontières
   d'architecture, décisions techniques (`docs/architecture.md`, `docs/decisions/`).
-- **Phase 1 — Ingestion RSS/Atom.** ✅ Fait. Fetch conditionnel (ETag/304),
-  retries, parsing RSS 2.0 + Atom, sanitization, déduplication niveaux 1-3,
-  persistance, logs de synchronisation par source. Voir `docs/ingestion.md`.
+- **Phase 1 — Ingestion RSS/Atom.** ✅ Fait, **validé de bout en bout contre
+  une vraie base Neon** (2026-08-20) : migration appliquée, cycle réel sur
+  un flux TechCrunch → 20 articles fetchés, 20 persistés, 0 échec. Fetch
+  conditionnel (ETag/304), retries, parsing RSS 2.0 + Atom, sanitization,
+  déduplication niveaux 1-3, logs de synchronisation par source. Voir
+  `docs/ingestion.md`.
 - **Phase 2+ (normalisation avancée, Story Engine, Trend Engine, IA, API, UI)**
   — pas encore implémentées.
 
